@@ -3,69 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GBA CLOUD PLAY</title>
+    <title>GBA ARCADE CLOUD</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- โหลดเครื่องยนต์เล่นเกม GBA -->
     <script src="https://unpkg.com/gbajs/dist/index.js"></script>
     <style>
         body { background-color: #0a0a0a; color: white; }
         .gamer-border { border: 2px solid #ff0000; box-shadow: 0 0 15px rgba(255, 0, 0, 0.5); }
         canvas { width: 100%; height: 100%; image-rendering: pixelated; }
+        .game-btn { background: #1a1a1a; border-left: 4px solid #ff0000; transition: 0.3s; }
+        .game-btn:hover { background: #ff0000; color: white; }
     </style>
 </head>
 <body class="font-sans">
 
-    <nav class="p-5 border-b-2 border-red-600 flex justify-between items-center shadow-lg">
-        <h1 class="text-3xl font-black italic text-red-600 tracking-tighter">GBA <span class="text-white">CLOUD</span></h1>
-        <div class="text-xs border border-red-600 px-3 py-1 text-red-500">ENGINE READY</div>
+    <nav class="p-5 border-b-2 border-red-600 flex justify-between items-center">
+        <h1 class="text-3xl font-black italic text-red-600">GBA <span class="text-white">ARCADE</span></h1>
+        <div id="status" class="text-xs text-zinc-500 uppercase tracking-widest">System Online</div>
     </nav>
 
-    <div class="container mx-auto mt-10 flex flex-col items-center px-4">
-        <!-- หน้าจอเกม -->
-        <div class="w-full max-w-2xl aspect-[3/2] bg-black gamer-border rounded-lg relative overflow-hidden">
-            <canvas id="screen"></canvas>
-            <div id="placeholder" class="absolute inset-0 flex items-center justify-center text-red-600 font-bold bg-black">
-                <p>กดปุ่ม UPLOAD ROM เพื่อเริ่มเล่น</p>
+    <div class="container mx-auto mt-10 flex flex-col md:flex-row gap-8 px-4">
+        
+        <!-- ฝั่งหน้าจอเกม -->
+        <div class="flex-1 flex flex-col items-center">
+            <div class="w-full aspect-[3/2] bg-black gamer-border rounded-lg relative overflow-hidden">
+                <canvas id="screen"></canvas>
+                <div id="loading-overlay" class="hidden absolute inset-0 bg-black bg-opacity-90 flex items-center justify-center">
+                    <div class="text-red-600 animate-pulse font-bold">LOADING GAME...</div>
+                </div>
+            </div>
+            
+            <div class="mt-6 p-4 bg-zinc-900 border-l-4 border-red-600 w-full">
+                <p class="text-xs text-zinc-400">CONTROLS: Z=A | X=B | Enter=Start | Shift=Select | Arrows=Move</p>
             </div>
         </div>
 
-        <!-- ปุ่มกด -->
-        <div class="mt-8 grid grid-cols-1 gap-4 w-full max-w-md">
-            <label class="bg-red-600 text-white text-center p-4 rounded cursor-pointer font-bold hover:bg-red-700 transition shadow-lg">
-                UPLOAD ROM (.gba)
-                <input type="file" id="upload" class="hidden" accept=".gba">
-            </label>
+        <!-- ฝั่งรายการเกม (ตู้เกม) -->
+        <div class="w-full md:w-80 flex flex-col gap-4">
+            <h2 class="text-xl font-bold border-b border-zinc-800 pb-2 text-red-500">SELECT GAME</h2>
+            
+            <!-- ปุ่มเกมที่ 1 (แก้ชื่อไฟล์ให้ตรงกับที่นายอัปโหลด) -->
+            <button onclick="loadRemoteGame('pokemon.gba')" class="game-btn p-4 text-left font-bold">
+                POKEMON EMERALD
+            </button>
+
+            <!-- ถ้ามีเกมเพิ่ม ให้ก๊อปปี้ปุ่มข้างบนมาวางต่อตรงนี้ -->
+
+            <div class="mt-10">
+                <p class="text-xs text-zinc-600 mb-2 italic text-center">-- OR UPLOAD YOUR OWN --</p>
+                <label class="block bg-zinc-800 text-center p-2 rounded cursor-pointer text-xs hover:bg-zinc-700">
+                    CHOOSE FILE
+                    <input type="file" id="upload" class="hidden" accept=".gba">
+                </label>
+            </div>
         </div>
 
-        <div class="mt-10 p-4 bg-zinc-900 border-l-4 border-red-600 w-full max-w-2xl">
-            <p class="text-red-500 font-bold mb-2">วิธีควบคุม:</p>
-            <p class="text-zinc-400 text-sm">ปุ่มลูกศร = บังคับทิศทาง | Z = ปุ่ม A | X = ปุ่ม B</p>
-            <p class="text-zinc-400 text-sm">Enter = Start | Shift = Select</p>
-        </div>
     </div>
 
     <script>
-        // ตั้งค่าเครื่องเล่นเกม
         const gba = new GameBoyAdvance();
         const canvas = document.getElementById('screen');
         gba.setCanvas(canvas);
 
-        // เมื่อเราเลือกไฟล์เกมจากเครื่อง
+        // ฟังก์ชันโหลดเกมจาก GitHub ของนาย
+        function loadRemoteGame(fileName) {
+            const overlay = document.getElementById('loading-overlay');
+            overlay.classList.remove('hidden');
+            
+            // ดึงไฟล์จาก GitHub
+            fetch(fileName)
+                .then(response => response.arrayBuffer())
+                .then(buffer => {
+                    gba.loadRom(buffer, (success) => {
+                        overlay.classList.add('hidden');
+                        if (success) gba.runAnimation();
+                        else alert('Failed to load game.');
+                    });
+                });
+        }
+
+        // ระบบเลือกไฟล์เอง (สำหรับ Manual Upload)
         document.getElementById('upload').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
-                // ซ่อนข้อความเริ่มต้น
-                document.getElementById('placeholder').style.display = 'none';
-                
                 const reader = new FileReader();
-                reader.onload = function(event) {
-                    // โหลดไฟล์เกมเข้าเครื่องยนต์
-                    gba.loadRom(event.target.result, function(success) {
-                        if (success) {
-                            gba.runAnimation(); // เริ่มเล่นเกม!
-                        } else {
-                            alert('โหลดเกมไม่สำเร็จ ลองไฟล์อื่นดูนะ');
-                        }
+                reader.onload = (event) => {
+                    gba.loadRom(event.target.result, (success) => {
+                        if (success) gba.runAnimation();
                     });
                 };
                 reader.readAsArrayBuffer(file);
