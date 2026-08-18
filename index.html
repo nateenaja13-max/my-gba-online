@@ -3,56 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GBA GAMER CLOUD</title>
+    <title>GBA CLOUD PLAY</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- โหลดเครื่องยนต์เล่นเกม GBA -->
+    <script src="https://unpkg.com/gbajs/dist/index.js"></script>
     <style>
         body { background-color: #0a0a0a; color: white; }
         .gamer-border { border: 2px solid #ff0000; box-shadow: 0 0 15px rgba(255, 0, 0, 0.5); }
-        .red-gradient { background: linear-gradient(180deg, #ff0000 0%, #8b0000 100%); }
+        canvas { width: 100%; height: 100%; image-rendering: pixelated; }
     </style>
 </head>
 <body class="font-sans">
 
-    <!-- Header -->
     <nav class="p-5 border-b-2 border-red-600 flex justify-between items-center shadow-lg">
-        <h1 class="text-3xl font-black italic text-red-600 tracking-tighter">
-            GBA <span class="text-white">CLOUD</span>
-        </h1>
-        <button id="loginBtn" class="border-2 border-red-600 px-6 py-2 font-bold hover:bg-red-600 transition">
-            LOGIN
-        </button>
+        <h1 class="text-3xl font-black italic text-red-600 tracking-tighter">GBA <span class="text-white">CLOUD</span></h1>
+        <div class="text-xs border border-red-600 px-3 py-1 text-red-500">ENGINE READY</div>
     </nav>
 
-    <!-- Main Game Space -->
-    <div class="container mx-auto mt-10 flex flex-col items-center">
-        
-        <!-- Screen -->
-        <div class="w-full max-w-2xl aspect-video bg-zinc-900 gamer-border rounded-lg flex items-center justify-center relative overflow-hidden">
-            <div class="text-red-600 opacity-30 font-bold uppercase">Ready to play</div>
-            <!-- เราจะใส่ตัวเล่นเกมตรงนี้ในขั้นตอนถัดไป -->
-            <canvas id="screen" class="absolute inset-0 w-full h-full"></canvas>
+    <div class="container mx-auto mt-10 flex flex-col items-center px-4">
+        <!-- หน้าจอเกม -->
+        <div class="w-full max-w-2xl aspect-[3/2] bg-black gamer-border rounded-lg relative overflow-hidden">
+            <canvas id="screen"></canvas>
+            <div id="placeholder" class="absolute inset-0 flex items-center justify-center text-red-600 font-bold bg-black">
+                <p>กดปุ่ม UPLOAD ROM เพื่อเริ่มเล่น</p>
+            </div>
         </div>
 
-        <!-- Buttons -->
-        <div class="mt-8 grid grid-cols-2 gap-4 w-full max-w-md">
-            <label class="red-gradient text-center p-4 rounded cursor-pointer font-bold hover:opacity-80 transition shadow-lg">
-                UPLOAD ROM
+        <!-- ปุ่มกด -->
+        <div class="mt-8 grid grid-cols-1 gap-4 w-full max-w-md">
+            <label class="bg-red-600 text-white text-center p-4 rounded cursor-pointer font-bold hover:bg-red-700 transition shadow-lg">
+                UPLOAD ROM (.gba)
                 <input type="file" id="upload" class="hidden" accept=".gba">
             </label>
-            <button onclick="saveGame()" class="bg-zinc-800 p-4 rounded font-bold border-b-4 border-zinc-900 active:border-0 hover:bg-zinc-700 transition">
-                SAVE CLOUD
-            </button>
         </div>
 
         <div class="mt-10 p-4 bg-zinc-900 border-l-4 border-red-600 w-full max-w-2xl">
-            <p class="text-zinc-500 text-sm uppercase">System: <span class="text-green-500">Ready</span></p>
-            <p class="text-zinc-400 italic text-xs">Login to sync your save files across devices.</p>
+            <p class="text-red-500 font-bold mb-2">วิธีควบคุม:</p>
+            <p class="text-zinc-400 text-sm">ปุ่มลูกศร = บังคับทิศทาง | Z = ปุ่ม A | X = ปุ่ม B</p>
+            <p class="text-zinc-400 text-sm">Enter = Start | Shift = Select</p>
         </div>
     </div>
 
     <script>
-        // โค้ดสำหรับระบบ Login และเล่นเกมจะอยู่ตรงนี้
-        console.log("Web loaded!");
+        // ตั้งค่าเครื่องเล่นเกม
+        const gba = new GameBoyAdvance();
+        const canvas = document.getElementById('screen');
+        gba.setCanvas(canvas);
+
+        // เมื่อเราเลือกไฟล์เกมจากเครื่อง
+        document.getElementById('upload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // ซ่อนข้อความเริ่มต้น
+                document.getElementById('placeholder').style.display = 'none';
+                
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    // โหลดไฟล์เกมเข้าเครื่องยนต์
+                    gba.loadRom(event.target.result, function(success) {
+                        if (success) {
+                            gba.runAnimation(); // เริ่มเล่นเกม!
+                        } else {
+                            alert('โหลดเกมไม่สำเร็จ ลองไฟล์อื่นดูนะ');
+                        }
+                    });
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        });
     </script>
 </body>
 </html>
