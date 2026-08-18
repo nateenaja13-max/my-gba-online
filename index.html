@@ -3,60 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GBA ARCADE CLOUD</title>
+    <title>GBA ARCADE</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/gbajs/dist/index.js"></script>
     <style>
         body { background-color: #0a0a0a; color: white; }
         .gamer-border { border: 2px solid #ff0000; box-shadow: 0 0 15px rgba(255, 0, 0, 0.5); }
         canvas { width: 100%; height: 100%; image-rendering: pixelated; }
-        .game-btn { background: #1a1a1a; border-left: 4px solid #ff0000; transition: 0.3s; }
+        .game-btn { background: #1a1a1a; border-left: 4px solid #ff0000; transition: 0.3s; width: 100%; text-align: left; padding: 1rem; font-weight: bold; }
         .game-btn:hover { background: #ff0000; color: white; }
     </style>
 </head>
 <body class="font-sans">
 
-    <nav class="p-5 border-b-2 border-red-600 flex justify-between items-center">
-        <h1 class="text-3xl font-black italic text-red-600">GBA <span class="text-white">ARCADE</span></h1>
-        <div id="status" class="text-xs text-zinc-500 uppercase tracking-widest">System Online</div>
+    <nav class="p-5 border-b-2 border-red-600 mb-5">
+        <h1 class="text-3xl font-black italic text-red-600 text-center">GBA <span class="text-white">ARCADE</span></h1>
     </nav>
 
-    <div class="container mx-auto mt-10 flex flex-col md:flex-row gap-8 px-4">
+    <div class="container mx-auto flex flex-col md:flex-row gap-8 px-4">
         
-        <!-- ฝั่งหน้าจอเกม -->
+        <!-- ส่วนหน้าจอเกม -->
         <div class="flex-1 flex flex-col items-center">
-            <div class="w-full aspect-[3/2] bg-black gamer-border rounded-lg relative overflow-hidden">
+            <div class="w-full max-w-2xl aspect-[3/2] bg-black gamer-border rounded-lg relative overflow-hidden">
                 <canvas id="screen"></canvas>
-                <div id="loading-overlay" class="hidden absolute inset-0 bg-black bg-opacity-90 flex items-center justify-center">
-                    <div class="text-red-600 animate-pulse font-bold">LOADING GAME...</div>
+                <div id="msg" class="absolute inset-0 flex items-center justify-center text-red-600 font-bold bg-black">
+                    รอกดเลือกเกมด้านขวามือ
                 </div>
             </div>
-            
-            <div class="mt-6 p-4 bg-zinc-900 border-l-4 border-red-600 w-full">
-                <p class="text-xs text-zinc-400">CONTROLS: Z=A | X=B | Enter=Start | Shift=Select | Arrows=Move</p>
-            </div>
+            <p class="mt-4 text-zinc-500 text-xs">Z=A | X=B | Enter=Start | Arrows=Move</p>
         </div>
 
-        <!-- ฝั่งรายการเกม (ตู้เกม) -->
+        <!-- ส่วนรายชื่อเกม (Arcade Cabinet) -->
         <div class="w-full md:w-80 flex flex-col gap-4">
-            <h2 class="text-xl font-bold border-b border-zinc-800 pb-2 text-red-500">SELECT GAME</h2>
+            <h2 class="text-xl font-bold border-b border-zinc-800 pb-2 text-red-500 uppercase">Arcade Cabinet</h2>
             
-            <!-- ปุ่มเกมที่ 1 (แก้ชื่อไฟล์ให้ตรงกับที่นายอัปโหลด) -->
-            <button onclick="loadRemoteGame('firered.gba')" class="game-btn p-4 text-left font-bold">
-                POKEMON EMERALD
+            <!-- ปุ่มโหลดเกม Pokemon ที่นายอัปโหลดไว้ -->
+            <button onclick="loadGame('firered.gba')" class="game-btn">
+                PLAY POKEMON FIRE RED
             </button>
 
-            <!-- ถ้ามีเกมเพิ่ม ให้ก๊อปปี้ปุ่มข้างบนมาวางต่อตรงนี้ -->
-
-            <div class="mt-10">
-                <p class="text-xs text-zinc-600 mb-2 italic text-center">-- OR UPLOAD YOUR OWN --</p>
-                <label class="block bg-zinc-800 text-center p-2 rounded cursor-pointer text-xs hover:bg-zinc-700">
-                    CHOOSE FILE
-                    <input type="file" id="upload" class="hidden" accept=".gba">
-                </label>
-            </div>
         </div>
-
     </div>
 
     <script>
@@ -64,36 +50,21 @@
         const canvas = document.getElementById('screen');
         gba.setCanvas(canvas);
 
-        // ฟังก์ชันโหลดเกมจาก GitHub ของนาย
-        function loadRemoteGame(fileName) {
-            const overlay = document.getElementById('loading-overlay');
-            overlay.classList.remove('hidden');
-            
-            // ดึงไฟล์จาก GitHub
+        function loadGame(fileName) {
+            document.getElementById('msg').innerText = "LOADING...";
             fetch(fileName)
-                .then(response => response.arrayBuffer())
+                .then(res => res.arrayBuffer())
                 .then(buffer => {
                     gba.loadRom(buffer, (success) => {
-                        overlay.classList.add('hidden');
-                        if (success) gba.runAnimation();
-                        else alert('Failed to load game.');
+                        if (success) {
+                            document.getElementById('msg').classList.add('hidden');
+                            gba.runAnimation();
+                        } else {
+                            alert("โหลดเกมไม่สำเร็จ ตรวจสอบชื่อไฟล์บน GitHub");
+                        }
                     });
                 });
         }
-
-        // ระบบเลือกไฟล์เอง (สำหรับ Manual Upload)
-        document.getElementById('upload').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    gba.loadRom(event.target.result, (success) => {
-                        if (success) gba.runAnimation();
-                    });
-                };
-                reader.readAsArrayBuffer(file);
-            }
-        });
     </script>
 </body>
 </html>
